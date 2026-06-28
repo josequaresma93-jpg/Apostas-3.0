@@ -1,36 +1,18 @@
 
 import streamlit as st
-from core.database import get_bets, performance_metrics
 
-st.title("📊 Dashboard")
+st.title("⚙️ Configurações")
 
-df = get_bets()
-m = performance_metrics()
+st.markdown("""
+## Próximas integrações
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("ROI", f'{m["roi"]:.2%}')
-c2.metric("Lucro", f'R$ {m["profit"]:.2f}')
-c3.metric("Apostas", m["bets"])
-c4.metric("Acerto", f'{m["hit_rate"]:.2%}')
+Esta versão já está pronta para receber:
 
-if df.empty:
-    st.info("Sem dados ainda.")
-else:
-    settled = df[df["result"].isin(["win", "half_win", "push", "half_loss", "loss"])]
-    if not settled.empty:
-        by_market = settled.groupby("market", as_index=False).agg(
-            apostas=("id", "count"),
-            stake=("stake", "sum"),
-            profit=("profit", "sum")
-        )
-        by_market["roi"] = by_market["profit"] / by_market["stake"]
-        st.subheader("Resultado por mercado")
-        st.dataframe(
-            by_market.style.format({
-                "stake": "R$ {:.2f}",
-                "profit": "R$ {:.2f}",
-                "roi": "{:.2%}",
-            }),
-            use_container_width=True
-        )
-        st.bar_chart(by_market.set_index("market")["profit"])
+- API de resultados;
+- API de odds;
+- Scanner automático por campeonato;
+- banco em nuvem;
+- alertas de valor.
+
+Por enquanto, use o Banco de Jogos para alimentar os dados manualmente ou com base de exemplo.
+""")

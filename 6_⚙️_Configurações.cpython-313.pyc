@@ -1,18 +1,5 @@
+[server]
+headless = true
 
-import streamlit as st
-
-st.title("⚙️ Configurações")
-
-st.markdown("""
-## Próximas integrações
-
-Esta versão já está pronta para receber:
-
-- API de resultados;
-- API de odds;
-- Scanner automático por campeonato;
-- banco em nuvem;
-- alertas de valor.
-
-Por enquanto, use o Banco de Jogos para alimentar os dados manualmente ou com base de exemplo.
-""")
+[browser]
+gatherUsageStats = false

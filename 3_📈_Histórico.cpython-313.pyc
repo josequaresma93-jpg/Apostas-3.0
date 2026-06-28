@@ -1,29 +1,48 @@
 
+import pandas as pd
 import streamlit as st
-from core.database import get_bets, update_bet_result, performance_metrics
+from core.database import get_matches
+from core.model import estimate_lambdas, market_probabilities
 
-st.title("📈 Histórico / ROI")
+st.title("🧪 Backtest simples")
 
-m = performance_metrics()
+league = st.text_input("Liga", "Série B")
+market = st.selectbox("Mercado", ["BTTS Sim", "Over 1.5", "Over 2.5"])
+threshold = st.slider("Probabilidade mínima", 0.0, 1.0, 0.60, 0.01)
 
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("Apostas", m["bets"])
-c2.metric("Stake", f'R$ {m["stake"]:.2f}')
-c3.metric("Lucro", f'R$ {m["profit"]:.2f}')
-c4.metric("ROI", f'{m["roi"]:.2%}')
-c5.metric("Acerto", f'{m["hit_rate"]:.2%}')
-
-df = get_bets()
+df = get_matches(league)
 
 if df.empty:
-    st.info("Nenhuma aposta salva.")
+    st.info("Cadastre jogos primeiro.")
 else:
-    st.dataframe(df, use_container_width=True)
+    rows = []
 
-    st.subheader("Atualizar resultado")
-    bet_id = st.number_input("ID da aposta", min_value=1, step=1)
-    result = st.selectbox("Resultado", ["pending", "win", "half_win", "push", "half_loss", "loss"])
+    for _, r in df.sort_values("match_date").iterrows():
+        lh, la, _ = estimate_lambdas(r["home_team"], r["away_team"], r["league"])
+        probs = market_probabilities(lh, la)
+        prob = float(probs.loc[probs["market"] == market, "prob"].iloc[0])
 
-    if st.button("Atualizar"):
-        update_bet_result(bet_id, result)
-        st.success("Resultado atualizado.")
+        if market == "BTTS Sim":
+            hit = int(r["home_goals"] > 0 and r["away_goals"] > 0)
+        else:
+            line = float(market.split()[1])
+            hit = int((r["home_goals"] + r["away_goals"]) > line)
+
+        entry = prob >= threshold
+
+        rows.append({
+            "data": r["match_date"],
+            "jogo": f'{r["home_team"]} x {r["away_team"]}',
+            "placar": f'{r["home_goals"]}-{r["away_goals"]}',
+            "prob": prob,
+            "entrada": entry,
+            "green": bool(hit) if entry else None,
+        })
+
+    bt = pd.DataFrame(rows)
+    st.dataframe(bt.style.format({"prob": "{:.2%}"}), use_container_width=True)
+
+    entries = bt[bt["entrada"] == True]
+    if not entries.empty:
+        st.metric("Entradas", len(entries))
+        st.metric("Taxa de acerto", f'{entries["green"].mean():.2%}')

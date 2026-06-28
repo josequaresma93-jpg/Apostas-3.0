@@ -1,104 +1,29 @@
 
-import pandas as pd
 import streamlit as st
-from core.database import get_leagues, get_teams, save_bet
-from core.model import estimate_lambdas, market_probabilities, compare_with_odds
+from core.database import get_bets, update_bet_result, performance_metrics
 
-st.title("🔍 Scanner de Valor")
+st.title("📈 Histórico / ROI")
 
-leagues = get_leagues()
+m = performance_metrics()
 
-if not leagues:
-    st.warning("Nenhuma liga encontrada. Vá na página inicial e carregue a base de exemplo.")
-    st.stop()
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("Apostas", m["bets"])
+c2.metric("Stake", f'R$ {m["stake"]:.2f}')
+c3.metric("Lucro", f'R$ {m["profit"]:.2f}')
+c4.metric("ROI", f'{m["roi"]:.2%}')
+c5.metric("Acerto", f'{m["hit_rate"]:.2%}')
 
-league = st.selectbox("Liga", leagues)
-teams = get_teams(league)
+df = get_bets()
 
-if len(teams) < 2:
-    st.warning("Cadastre mais jogos para ter pelo menos 2 times.")
-    st.stop()
-
-c1, c2, c3, c4 = st.columns(4)
-home = c1.selectbox("Mandante", teams, index=0)
-away = c2.selectbox("Visitante", teams, index=1)
-bankroll = c3.number_input("Banca R$", min_value=100.0, value=1000.0, step=100.0)
-min_edge = c4.number_input("Edge mínimo", min_value=0.0, max_value=0.50, value=0.06, step=0.01)
-
-lambda_home, lambda_away, warning = estimate_lambdas(home, away, league)
-
-if warning:
-    st.warning(warning)
-
-m1, m2 = st.columns(2)
-m1.metric("Lambda mandante", f"{lambda_home:.2f}")
-m2.metric("Lambda visitante", f"{lambda_away:.2f}")
-
-markets_df = market_probabilities(lambda_home, lambda_away)
-
-st.subheader("Odds da casa")
-
-main_markets = [
-    "BTTS Sim", "BTTS Não",
-    "Over 1.5", "Under 2.5", "Over 2.5",
-    "Casa ML", "Empate", "Fora ML",
-    "Casa DNB", "Fora DNB",
-    "Casa AH -0.5", "Casa AH +0",
-    "Fora AH +0.5", "Fora AH +0"
-]
-
-rows = []
-cols = st.columns(4)
-
-for i, market in enumerate(main_markets):
-    with cols[i % 4]:
-        odd = st.number_input(market, min_value=0.0, max_value=50.0, value=0.0, step=0.01, key=market)
-        if odd > 0:
-            rows.append({"market": market, "odd": odd})
-
-odds_df = pd.DataFrame(rows, columns=["market", "odd"])
-radar = compare_with_odds(markets_df, odds_df, bankroll, min_edge)
-
-st.subheader("Radar")
-
-if radar.empty:
-    st.info("Digite pelo menos uma odd acima de 0.")
+if df.empty:
+    st.info("Nenhuma aposta salva.")
 else:
-    st.dataframe(
-        radar[["market", "prob", "fair_odd", "odd", "edge", "ev", "kelly", "stake", "decision"]].style.format({
-            "prob": "{:.2%}",
-            "fair_odd": "{:.2f}",
-            "odd": "{:.2f}",
-            "edge": "{:.2%}",
-            "ev": "{:.2%}",
-            "kelly": "{:.2%}",
-            "stake": "R$ {:.2f}",
-        }),
-        use_container_width=True
-    )
+    st.dataframe(df, use_container_width=True)
 
-    st.subheader("Salvar aposta")
-    selected = st.selectbox("Mercado", radar["market"].tolist())
-    row = radar[radar["market"] == selected].iloc[0]
-    stake = st.number_input("Stake R$", min_value=1.0, value=float(max(1, round(row["stake"], 2))), step=1.0)
+    st.subheader("Atualizar resultado")
+    bet_id = st.number_input("ID da aposta", min_value=1, step=1)
+    result = st.selectbox("Resultado", ["pending", "win", "half_win", "push", "half_loss", "loss"])
 
-    if st.button("Salvar no histórico"):
-        save_bet(
-            league=league,
-            game=f"{home} x {away}",
-            market=row["market"],
-            odd=float(row["odd"]),
-            fair_odd=float(row["fair_odd"]),
-            prob=float(row["prob"]),
-            edge=float(row["edge"]),
-            ev=float(row["ev"]),
-            kelly_value=float(row["kelly"]),
-            stake=float(stake)
-        )
-        st.success("Aposta salva.")
-
-with st.expander("Todas as probabilidades"):
-    st.dataframe(
-        markets_df.style.format({"prob": "{:.2%}", "fair_odd": "{:.2f}"}),
-        use_container_width=True
-    )
+    if st.button("Atualizar"):
+        update_bet_result(bet_id, result)
+        st.success("Resultado atualizado.")

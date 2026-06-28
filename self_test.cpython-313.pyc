@@ -1,0 +1,28 @@
+
+from datetime import date
+import streamlit as st
+from core.database import add_match, get_matches, seed_demo
+
+st.title("📚 Banco de Jogos")
+
+with st.form("novo_jogo"):
+    c1, c2, c3 = st.columns(3)
+    match_date = c1.date_input("Data", value=date.today())
+    league = c2.text_input("Liga", "Série B")
+    home = c3.text_input("Mandante", "Vila Nova")
+
+    c4, c5, c6 = st.columns(3)
+    away = c4.text_input("Visitante", "Novorizontino")
+    home_goals = c5.number_input("Gols mandante", min_value=0, value=1)
+    away_goals = c6.number_input("Gols visitante", min_value=0, value=1)
+
+    if st.form_submit_button("Salvar jogo"):
+        add_match(match_date, league, home, away, home_goals, away_goals)
+        st.success("Jogo salvo.")
+
+if st.button("Carregar base de exemplo"):
+    seed_demo()
+    st.success("Base carregada.")
+
+league_filter = st.text_input("Filtrar liga", "Série B")
+st.dataframe(get_matches(league_filter), use_container_width=True)
