@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Apostas 3.0 PRO</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>⚽ Apostas 3.0 PRO</h1>
+      <p>Scanner de valor com Poisson, odds justas, Edge, EV, Kelly, ROI e histórico</p>
+    </div>
+    <div class="top-actions">
+      <button id="seedBtn">Carregar exemplo</button>
+      <button id="exportBtn">Exportar dados</button>
+      <label class="file-btn">Importar dados<input id="importFile" type="file" accept="application/json" hidden /></label>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="scanner">🔍 Scanner</button>
+    <button class="tab" data-tab="banco">📚 Banco</button>
+    <button class="tab" data-tab="historico">📈 Histórico</button>
+    <button class="tab" data-tab="dashboard">📊 Dashboard</button>
+    <button class="tab" data-tab="backtest">🧪 Backtest</button>
+    <button class="tab" data-tab="config">⚙️ Configurações</button>
+  </nav>
+
+  <main>
+    <section id="scanner" class="panel active">
+      <div class="section-title"><h2>🔍 Scanner de Valor</h2><button id="scanBtn">Calcular valor</button></div>
+      <div class="grid four">
+        <label>Liga<input id="leagueInput" value="Série B" /></label>
+        <label>Mandante<select id="homeSelect"></select></label>
+        <label>Visitante<select id="awaySelect"></select></label>
+        <label>Banca R$<input id="bankrollInput" type="number" value="1000" min="100" step="100" /></label>
+      </div>
+      <div class="grid four">
+        <label>Edge mínimo<input id="edgeInput" type="number" value="0.06" min="0" max="1" step="0.01" /></label>
+        <label>Ajuste mandante<input id="homeAdjInput" type="number" value="0" min="-1" max="1" step="0.05" /></label>
+        <label>Ajuste visitante<input id="awayAdjInput" type="number" value="0" min="-1" max="1" step="0.05" /></label>
+        <label>Filtro<select id="decisionFilter"><option value="todos">Todos</option><option value="entrada">Somente entrada</option><option value="valor">Valor leve + entrada</option></select></label>
+      </div>
+      <div class="cards">
+        <div class="card"><span>Lambda Casa</span><strong id="lambdaHome">-</strong></div>
+        <div class="card"><span>Lambda Fora</span><strong id="lambdaAway">-</strong></div>
+        <div class="card"><span>Jogos Casa</span><strong id="homeGames">-</strong></div>
+        <div class="card"><span>Jogos Fora</span><strong id="awayGames">-</strong></div>
+        <div class="card"><span>BTTS Casa</span><strong id="homeBtts">-</strong></div>
+        <div class="card"><span>BTTS Fora</span><strong id="awayBtts">-</strong></div>
+      </div>
+      <details open><summary>Odds da casa</summary><div id="oddsGrid" class="odds-grid"></div></details>
+      <h3>Radar</h3>
+      <div class="table-wrap"><table id="radarTable"><thead><tr><th>Mercado</th><th>Prob.</th><th>Odd Justa</th><th>Odd Casa</th><th>Edge</th><th>EV</th><th>Kelly</th><th>Stake</th><th>Decisão</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+      <details><summary>Todas as probabilidades</summary><div class="table-wrap"><table id="allMarketsTable"><thead><tr><th>Mercado</th><th>Prob.</th><th>Odd justa</th></tr></thead><tbody></tbody></table></div></details>
+    </section>
+
+    <section id="banco" class="panel">
+      <div class="section-title"><h2>📚 Banco de Jogos</h2><button id="clearMatchesBtn" class="danger">Limpar jogos</button></div>
+      <div class="grid six">
+        <label>Data<input id="matchDate" type="date" /></label>
+        <label>Liga<input id="matchLeague" value="Série B" /></label>
+        <label>Mandante<input id="matchHome" value="Vila Nova" /></label>
+        <label>Visitante<input id="matchAway" value="Novorizontino" /></label>
+        <label>Gols mandante<input id="matchHG" type="number" min="0" value="1" /></label>
+        <label>Gols visitante<input id="matchAG" type="number" min="0" value="1" /></label>
+      </div>
+      <div class="actions"><button id="addMatchBtn">Salvar jogo</button><button id="downloadCsvTemplateBtn">Baixar modelo CSV</button><label class="file-btn">Importar CSV<input id="csvFile" type="file" accept=".csv,text/csv" hidden /></label></div>
+      <p class="hint">CSV: data,liga,mandante,visitante,gols_mandante,gols_visitante</p>
+      <div class="table-wrap"><table id="matchesTable"><thead><tr><th>Data</th><th>Liga</th><th>Mandante</th><th>Visitante</th><th>Placar</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section id="historico" class="panel">
+      <div class="section-title"><h2>📈 Histórico / ROI</h2><button id="clearBetsBtn" class="danger">Limpar histórico</button></div>
+      <div class="cards"><div class="card"><span>Apostas</span><strong id="mBets">0</strong></div><div class="card"><span>Stake</span><strong id="mStake">R$ 0,00</strong></div><div class="card"><span>Lucro</span><strong id="mProfit">R$ 0,00</strong></div><div class="card"><span>ROI/Yield</span><strong id="mRoi">0%</strong></div><div class="card"><span>Acerto</span><strong id="mHit">0%</strong></div></div>
+      <div class="table-wrap"><table id="betsTable"><thead><tr><th>ID</th><th>Data</th><th>Liga</th><th>Jogo</th><th>Mercado</th><th>Odd</th><th>Odd justa</th><th>EV</th><th>Stake</th><th>Resultado</th><th>Lucro</th><th>Ação</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section id="dashboard" class="panel">
+      <h2>📊 Dashboard</h2>
+      <div class="cards"><div class="card"><span>Melhor mercado</span><strong id="bestMarket">-</strong></div><div class="card"><span>Pior mercado</span><strong id="worstMarket">-</strong></div><div class="card"><span>Maior lucro</span><strong id="biggestWin">-</strong></div><div class="card"><span>Maior perda</span><strong id="biggestLoss">-</strong></div></div>
+      <h3>Resultado por mercado</h3><div class="table-wrap"><table id="marketStatsTable"><thead><tr><th>Mercado</th><th>Apostas</th><th>Stake</th><th>Lucro</th><th>ROI</th><th>Acerto</th></tr></thead><tbody></tbody></table></div>
+      <h3>Resultado por liga</h3><div class="table-wrap"><table id="leagueStatsTable"><thead><tr><th>Liga</th><th>Apostas</th><th>Stake</th><th>Lucro</th><th>ROI</th><th>Acerto</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section id="backtest" class="panel">
+      <div class="section-title"><h2>🧪 Backtest Simples</h2><button id="runBacktestBtn">Rodar backtest</button></div>
+      <div class="grid three"><label>Liga<input id="btLeague" value="Série B" /></label><label>Mercado<select id="btMarket"><option>BTTS Sim</option><option>Over 1.5</option><option>Over 2.5</option><option>Casa ML</option><option>Fora ML</option></select></label><label>Probabilidade mínima<input id="btThreshold" type="number" min="0" max="1" step="0.01" value="0.60" /></label></div>
+      <div class="cards"><div class="card"><span>Entradas</span><strong id="btEntries">0</strong></div><div class="card"><span>Greens</span><strong id="btGreens">0</strong></div><div class="card"><span>Taxa</span><strong id="btHit">0%</strong></div></div>
+      <div class="table-wrap"><table id="backtestTable"><thead><tr><th>Data</th><th>Jogo</th><th>Placar</th><th>Prob.</th><th>Entrada</th><th>Green</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section id="config" class="panel">
+      <h2>⚙️ Configurações e comandos</h2>
+      <div class="grid two"><div class="box"><h3>Publicar no GitHub Pages</h3><ol><li>Suba os arquivos no repositório.</li><li>Settings → Pages.</li><li>Source: Deploy from branch.</li><li>Branch: main.</li><li>Folder: /root.</li><li>Save.</li></ol></div><div class="box"><h3>Comandos Git úteis</h3><pre><code>git add .
+git commit -m "Atualiza site Apostas 3.0"
+git push origin main</code></pre></div></div>
+      <div class="grid two"><div class="box"><h3>Limpeza</h3><pre><code>find . -name "__pycache__" -type d -exec rm -rf {} +
+find . -name "*.pyc" -delete</code></pre></div><div class="box"><h3>Dados</h3><button id="resetAllBtn" class="danger">Resetar tudo</button><p class="hint">Os dados ficam salvos no navegador usando localStorage.</p></div></div>
+    </section>
+  </main>
+  <div id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
